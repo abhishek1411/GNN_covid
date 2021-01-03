@@ -1,0 +1,142 @@
+Evaluation: smaller learning rate
+Train graphs:8,Test graphs:8,hidden_nodes:0.5, k_days:5
+location of graphs:./graphs, weight_scale= 1.0, dropout= 0.3
+No.of_days_used:365
+GCN(
+  (conv1): GCNConv(5, 32)
+  (conv2): GCNConv(32, 32)
+  (out): Linear(in_features=32, out_features=5, bias=True)
+)
+[0m 2s], Epoch: 000, Loss: 1.6049,tot_acc=0.8732493150684931, F1_inf:0.19450763730906728
+[4m 40s], Epoch: 300, Loss: 1.1495,tot_acc=0.8308493150684931, F1_inf:0.3499953848606647
+Test_set:0, Test Accuracy: 0.7978,
+ confusion_matrix:[[148578  25483    728      1      0]
+ [  1226  12549   3616     14      0]
+ [   773  15822  23586   5321      0]
+ [   189   8849  62798 397684      0]
+ [     0    387   3188  19208      0]]
+Accuracy_infected = 0.518350841721243
+Precision_infected = 0.2511393159844968
+F1_score_infected = 0.3383494240341993
+Test_set:1, Test Accuracy: 0.8064,
+ confusion_matrix:[[138764  24313    710     59      0]
+ [  1018  12268   3863     25      0]
+ [   752  15537  23245   4158      0]
+ [   227   9230  61278 414388      0]
+ [    10    449   2381  17325      0]]
+Accuracy_infected = 0.5320195916872654
+Precision_infected = 0.25410758988598225
+F1_score_infected = 0.3439398086839438
+Test_set:2, Test Accuracy: 0.8365,
+ confusion_matrix:[[233097  22049   1129    267      0]
+ [  1107   9757   4166     80      0]
+ [   792  11735  21587   3478      0]
+ [   326   6582  51299 346209      0]
+ [    30    269   2062  13979      0]]
+Accuracy_infected = 0.5742445201106618
+Precision_infected = 0.26902035068479496
+F1_score_infected = 0.3663936860864768
+Test_set:3, Test Accuracy: 0.8137,
+ confusion_matrix:[[141917  22312    971      0      0]
+ [  1325  11231   4347     57      0]
+ [   927  14036  25003   4268      0]
+ [   196   6727  62731 415883      0]
+ [     0    248   2302  15519      0]]
+Accuracy_infected = 0.5652439300085906
+Precision_infected = 0.2622123875243828
+F1_score_infected = 0.35823996332062924
+#####################################################################
+Train graphs:8,Test graphs:8,hidden_nodes:0.5, k_days:15
+location of graphs:./graphs, weight_scale= 1.0, dropout= 0.3
+No.of_days_used:365
+GCN(
+  (conv1): GCNConv(5, 32)
+  (conv2): GCNConv(32, 32)
+  (out): Linear(in_features=32, out_features=5, bias=True)
+)
+[0m 2s], Epoch: 000, Loss: 1.6046,tot_acc=0.8558547945205479, F1_inf:0.13397312859884836
+[4m 41s], Epoch: 300, Loss: 1.1825,tot_acc=0.8153616438356165, F1_inf:0.34578937958161987
+Test_set:0, Test Accuracy: 0.7851,
+ confusion_matrix:[[147269  25917   2359      8      0]
+ [  1020  12029   4860     26     15]
+ [   565  15310  24513   3768    154]
+ [    76   9177  71603 389301   1277]
+ [     0    373   3083  17297      0]]
+Accuracy_infected = 0.5532159783344618
+Precision_infected = 0.23034636997500424
+F1_score_infected = 0.32526139801496734
+Test_set:1, Test Accuracy: 0.8016,
+ confusion_matrix:[[138478  24596   1049    309      0]
+ [   944  12472   4310     22      0]
+ [   697  15698  24735   5040      0]
+ [   159   8714  61829 409458      0]
+ [    23    386   2758  18323      0]]
+Accuracy_infected = 0.5357374918778428
+Precision_infected = 0.2612456564675067
+F1_score_infected = 0.35122221354480976
+Test_set:2, Test Accuracy: 0.8219,
+ confusion_matrix:[[233240  21343    996      0      0]
+ [  1260   9837   3690     28      0]
+ [   761  12124  21600   2927      0]
+ [   233   7255  59611 335341    238]
+ [     4    407   2946  16159      0]]
+Accuracy_infected = 0.5773548594034
+Precision_infected = 0.2431255135463683
+F1_score_infected = 0.3421646667458715
+Test_set:3, Test Accuracy: 0.7987,
+ confusion_matrix:[[140164  23509   2179      0      0]
+ [  1010  10477   5568     60      0]
+ [   734  11941  27346   2897      0]
+ [   179   5714  74844 405069     12]
+ [    10    243   2683  15361      0]]
+Accuracy_infected = 0.6371685539866723
+Precision_infected = 0.24281655123423904
+F1_score_infected = 0.3516311126541424
+#####################################################################
+Train graphs:8,Test graphs:8,hidden_nodes:0.5, k_days:30
+location of graphs:./graphs, weight_scale= 1.0, dropout= 0.3
+No.of_days_used:365
+GCN(
+  (conv1): GCNConv(5, 32)
+  (conv2): GCNConv(32, 32)
+  (out): Linear(in_features=32, out_features=5, bias=True)
+)
+[0m 2s], Epoch: 000, Loss: 1.6043,tot_acc=0.8516917808219178, F1_inf:0.1408748913002382
+[4m 41s], Epoch: 300, Loss: 1.1737,tot_acc=0.827241095890411, F1_inf:0.3589880292895046
+Test_set:0, Test Accuracy: 0.7874,
+ confusion_matrix:[[148449  25011    746      0      0]
+ [  1135  12655   3755     26      2]
+ [   695  14977  24492   3200     34]
+ [   200   8599  73210 389242   2191]
+ [     1    413   3416  17551      0]]
+Accuracy_infected = 0.5643578045071201
+Precision_infected = 0.2318900955320539
+F1_score_infected = 0.32871417355066873
+Test_set:1, Test Accuracy: 0.8017,
+ confusion_matrix:[[140965  21663   1199    252      0]
+ [  1227  11496   4748     16      0]
+ [   914  14013  24741   2998      8]
+ [   192   7743  71274 408043    221]
+ [    13    422   2668  15184      0]]
+Accuracy_infected = 0.5797675399540704
+Precision_infected = 0.23646181783427314
+F1_score_infected = 0.3359175582468908
+Test_set:2, Test Accuracy: 0.8237,
+ confusion_matrix:[[232993  21160   1296    250      0]
+ [  1235   9812   3811     52      0]
+ [   823  11970  21751   2773     19]
+ [   409   6949  60382 336742   1159]
+ [     2    290   2521  13601      0]]
+Accuracy_infected = 0.5825744589672166
+Precision_infected = 0.24232127538686066
+F1_score_infected = 0.34227401118830497
+Test_set:3, Test Accuracy: 0.8074,
+ confusion_matrix:[[142422  20712   2428    248      0]
+ [  1312   9529   6997     16      0]
+ [   793   9844  29675   3713      0]
+ [   275   4440  71525 407545    218]
+ [     0    188   2898  14965    257]]
+Accuracy_infected = 0.6740488358886996
+Precision_infected = 0.2614007734115554
+F1_score_infected = 0.37671058978850896
+#####################################################################

@@ -1,0 +1,207 @@
+gnn_seird_cluster.py:290: RuntimeWarning: invalid value encountered in long_scalars
+  infected_precision = conf_matrix[2,2]/np.sum(conf_matrix[:,2])
+gnn_seird_cluster.py:290: RuntimeWarning: invalid value encountered in long_scalars
+  infected_precision = conf_matrix[2,2]/np.sum(conf_matrix[:,2])
+gnn_seird_cluster.py:290: RuntimeWarning: invalid value encountered in long_scalars
+  infected_precision = conf_matrix[2,2]/np.sum(conf_matrix[:,2])
+Evaluation: smaller learning rate
+Train graphs:8,Test graphs:8,hidden_nodes:0.2, k_days:15
+location of graphs:./graphs, weight_scale= 1.0, dropout= 0.3
+No.of_days_used:365
+GCN(
+  (conv1): GCNConv(5, 32)
+  (conv2): GCNConv(32, 32)
+  (out): Linear(in_features=32, out_features=5, bias=True)
+)
+[0m 2s], Epoch: 000, Loss: 1.6071,tot_acc=0.5191472602739726, F1_inf:0.029217267972697452
+[7m 48s], Epoch: 500, Loss: 1.1611,tot_acc=0.8127226027397261, F1_inf:0.3573556238021567
+[15m 35s], Epoch: 1000, Loss: 1.1404,tot_acc=0.8150856164383562, F1_inf:0.3553877711342906
+[23m 24s], Epoch: 1500, Loss: 1.1318,tot_acc=0.8137020547945205, F1_inf:0.3537492602925015
+[31m 10s], Epoch: 2000, Loss: 1.1241,tot_acc=0.8140787671232876, F1_inf:0.3481646741875737
+Test_set:0, Test Accuracy: 0.7789,
+ confusion_matrix:[[ 59480   9103   1290      0      2]
+ [   580   3754   2288      0     34]
+ [   294   4866  10245   1837     67]
+ [    60   3035  27854 153957   3578]
+ [     1    205   1422   8048      0]]
+Accuracy_infected = 0.5918886128603617
+Precision_infected = 0.2377085315204529
+F1_score_infected = 0.33919348430671437
+Test_set:1, Test Accuracy: 0.8068,
+ confusion_matrix:[[ 56043   8775   1315    501      0]
+ [   435   3580   3095      0      0]
+ [   235   3775  11964   2404      0]
+ [    71   1924  24996 164001      5]
+ [     0     84   1110   7687      0]]
+Accuracy_infected = 0.6509957557949723
+Precision_infected = 0.28163841807909606
+F1_score_infected = 0.39317756087942424
+Test_set:2, Test Accuracy: 0.8124,
+ confusion_matrix:[[ 92720   8332   1082     16      0]
+ [   395   2854   2469     23      0]
+ [   325   3248   9864   1222     71]
+ [   141   1838  23502 131133   6864]
+ [    30    137    992   4078    664]]
+Accuracy_infected = 0.6696537678207739
+Precision_infected = 0.26020206283468306
+F1_score_infected = 0.37477915613898444
+Test_set:3, Test Accuracy: 0.8137,
+ confusion_matrix:[[ 56450   8451   1692      0      0]
+ [   380   3170   3544      9      0]
+ [   307   3397  12837   1634     14]
+ [    85   1222  27590 165155    737]
+ [     0     12    708   4606      0]]
+Accuracy_infected = 0.7057562262906152
+Precision_infected = 0.27683250307304136
+F1_score_infected = 0.39767657992565053
+#####################################################################
+Train graphs:8,Test graphs:8,hidden_nodes:0.8, k_days:15
+location of graphs:./graphs, weight_scale= 1.0, dropout= 0.3
+No.of_days_used:365
+GCN(
+  (conv1): GCNConv(5, 32)
+  (conv2): GCNConv(32, 32)
+  (out): Linear(in_features=32, out_features=5, bias=True)
+)
+[0m 2s], Epoch: 000, Loss: 1.6085,tot_acc=0.5522953767123288, F1_inf:nan
+[7m 47s], Epoch: 500, Loss: 1.2602,tot_acc=0.8014828767123288, F1_inf:0.3554300069910594
+[15m 31s], Epoch: 1000, Loss: 1.2519,tot_acc=0.8070265410958904, F1_inf:0.35233483772934476
+[23m 13s], Epoch: 1500, Loss: 1.2485,tot_acc=0.8122628424657534, F1_inf:0.3533826101675788
+[30m 52s], Epoch: 2000, Loss: 1.2461,tot_acc=0.814917808219178, F1_inf:0.354038385771374
+Test_set:0, Test Accuracy: 0.7915,
+ confusion_matrix:[[240325  37695   1440      0      0]
+ [  2171  19361   7336     37      0]
+ [  1241  20993  40356   7839    547]
+ [   366  11341  97906 623094  21636]
+ [     4    480   4638  27912   1282]]
+Accuracy_infected = 0.5685865644724978
+Precision_infected = 0.2660671431208629
+F1_score_infected = 0.36250291935396944
+Test_set:1, Test Accuracy: 0.7972,
+ confusion_matrix:[[223915  37497   1218    503      0]
+ [  1785  18682   7427     57     26]
+ [  1261  21261  39649   7065    282]
+ [   277  10864 101877 648453  13852]
+ [    23    555   4250  26833    388]]
+Accuracy_infected = 0.5703414942892489
+Precision_infected = 0.2567591195498022
+F1_score_infected = 0.35410535904866947
+Test_set:2, Test Accuracy: 0.8049,
+ confusion_matrix:[[373661  34632    917    248      0]
+ [  1936  15836   5642     50     65]
+ [  1155  18844  33102   4988   1108]
+ [   554  10894  88379 515894  32929]
+ [    45    520   3606  21366   1629]]
+Accuracy_infected = 0.5591837424193794
+Precision_infected = 0.2514470625769108
+F1_score_infected = 0.34690295164087753
+Test_set:3, Test Accuracy: 0.8063,
+ confusion_matrix:[[229869  34230   1181    262      7]
+ [  2223  18330   7045     74      2]
+ [  1379  21660  40369   7356    195]
+ [   419   9921  99048 652723  11367]
+ [    14    479   3954  25401    492]]
+Accuracy_infected = 0.5689059879648811
+Precision_infected = 0.2662915493050654
+F1_score_infected = 0.36277611028235585
+#####################################################################
+Train graphs:8,Test graphs:8,hidden_nodes:0.9, k_days:15
+location of graphs:./graphs, weight_scale= 1.0, dropout= 0.3
+No.of_days_used:365
+GCN(
+  (conv1): GCNConv(5, 32)
+  (conv2): GCNConv(32, 32)
+  (out): Linear(in_features=32, out_features=5, bias=True)
+)
+[0m 2s], Epoch: 000, Loss: 1.6089,tot_acc=0.5548949771689498, F1_inf:nan
+[7m 37s], Epoch: 500, Loss: 1.2772,tot_acc=0.7798744292237443, F1_inf:0.3723499736931695
+[15m 12s], Epoch: 1000, Loss: 1.2676,tot_acc=0.7763363774733638, F1_inf:0.36485545277077464
+[22m 47s], Epoch: 1500, Loss: 1.2636,tot_acc=0.7580076103500761, F1_inf:0.36036731974391906
+[30m 22s], Epoch: 2000, Loss: 1.2617,tot_acc=0.7454946727549467, F1_inf:0.3602546450656522
+Test_set:0, Test Accuracy: 0.7131,
+ confusion_matrix:[[269971  43459   1465      0     31]
+ [  2526  21053   8243     14     44]
+ [  1518  23215  46848   5466   4334]
+ [   455  11401 121474 593199 119637]
+ [     3    557   5977  27158   5952]]
+Accuracy_infected = 0.5756626239539941
+Precision_infected = 0.25459900982027855
+F1_score_infected = 0.35305288860084094
+Test_set:1, Test Accuracy: 0.7480,
+ confusion_matrix:[[255505  37932   1297    302     20]
+ [  2604  21122   7477      5     18]
+ [  1724  24898  45439   4761   2800]
+ [   419  13116 130660 658134  70275]
+ [    28    627   5446  26691   2700]]
+Accuracy_infected = 0.5706839818140715
+Precision_infected = 0.23875177990636773
+F1_score_infected = 0.336658751356778
+Test_set:2, Test Accuracy: 0.7695,
+ confusion_matrix:[[420687  38328   1350    248     21]
+ [  2603  16926   7512     29     26]
+ [  1655  18963  40165   3958   3032]
+ [   792  10197  99944 528583  87790]
+ [    35    440   4116  21778   4822]]
+Accuracy_infected = 0.592640136927685
+Precision_infected = 0.2623671507051546
+F1_score_infected = 0.3637145703160373
+Test_set:3, Test Accuracy: 0.7427,
+ confusion_matrix:[[254167  42155   1659    255      0]
+ [  2096  20401   8519     23    111]
+ [  1390  23045  46882   5210   4107]
+ [   392  10444 112437 650845  97599]
+ [    12    417   3981  24268   3585]]
+Accuracy_infected = 0.5814172681499119
+Precision_infected = 0.27024752418174064
+F1_score_infected = 0.3689869034126685
+#####################################################################
+Train graphs:8,Test graphs:8,hidden_nodes:0.95, k_days:15
+location of graphs:./graphs, weight_scale= 1.0, dropout= 0.3
+No.of_days_used:365
+GCN(
+  (conv1): GCNConv(5, 32)
+  (conv2): GCNConv(32, 32)
+  (out): Linear(in_features=32, out_features=5, bias=True)
+)
+[0m 2s], Epoch: 000, Loss: 1.6090,tot_acc=0.5552494592645999, F1_inf:nan
+[7m 37s], Epoch: 500, Loss: 1.2930,tot_acc=0.7468644556596972, F1_inf:0.36820353339539447
+[15m 12s], Epoch: 1000, Loss: 1.2801,tot_acc=0.7801499639509734, F1_inf:0.3602072067169016
+[22m 48s], Epoch: 1500, Loss: 1.2763,tot_acc=0.7768046142754146, F1_inf:0.3571205952339727
+[30m 23s], Epoch: 2000, Loss: 1.2740,tot_acc=0.7636135544340302, F1_inf:0.35661581192145936
+Test_set:0, Test Accuracy: 0.6646,
+ confusion_matrix:[[281366  49771   1248      0     10]
+ [  2287  24472   6882     19    127]
+ [  1350  29178  44678   2994   6339]
+ [   394  15854 126815 562215 188193]
+ [     0    809   6352  26631   9016]]
+Accuracy_infected = 0.5284898094370646
+Precision_infected = 0.24023659093964242
+F1_score_infected = 0.3303193180389924
+Test_set:1, Test Accuracy: 0.7218,
+ confusion_matrix:[[264189  45727   1718    289     10]
+ [  2578  22079   8254      2    131]
+ [  1737  25660  45495   4358   6453]
+ [   504  13919 110614 662748 133041]
+ [    36    649   4522  25657   6630]]
+Accuracy_infected = 0.5435289057739866
+Precision_infected = 0.2666717466867523
+F1_score_infected = 0.3577972993165714
+Test_set:2, Test Accuracy: 0.7409,
+ confusion_matrix:[[452334  32584    995    246     30]
+ [  3747  18302   6190     23     72]
+ [  2526  23431  35765   3275   6110]
+ [  1052  14035  87055 516129 151195]
+ [    79    619   3525  22613   5068]]
+Accuracy_infected = 0.5029743907069627
+Precision_infected = 0.267842432412192
+F1_score_infected = 0.34954578106598505
+Test_set:3, Test Accuracy: 0.6989,
+ confusion_matrix:[[274607  38536   1652    451     54]
+ [  3134  20930   8342     31    162]
+ [  2102  24999  46631   3697   6631]
+ [   668  11907 122718 619558 166146]
+ [    16    514   4812  21024   7678]]
+Accuracy_infected = 0.5547347133000238
+Precision_infected = 0.253216040835166
+F1_score_infected = 0.34771358797979235
+#####################################################################
