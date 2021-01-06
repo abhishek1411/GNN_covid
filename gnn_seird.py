@@ -15,6 +15,7 @@ import time
 import math
 random.seed(1)
 import os
+from torch import nn
 from torch.nn import Linear
 import torch.nn.functional as F
 from torch_geometric import utils
@@ -68,6 +69,58 @@ class GCN(torch.nn.Module):
         x = F.softmax(self.out(x), dim=1) #is the classification layer
         return x
 
+class Recurrent_layer_GCN(torch.nn.Module):
+    def __init__(self, hidden_channels,dropout):
+        # Init parent
+        super(Recurrent_layer_GCN, self).__init__()
+        torch.manual_seed(42)
+        self.dropout = dropout
+        self.hidden_channels = hidden_channels
+        self.lookback = 3
+
+        self.projection = nn.Linear(num_features, hidden_channels)
+
+        # GCN layers: 2 message passing layers (to create embedding)
+        self.conv1 = GCNConv(self.hidden_channels, self.hidden_channels)
+        self.conv2 = GCNConv(self.hidden_channels, self.hidden_channels)
+
+        self.layer_count = 1
+        self.hidden_c = nn.Parameter(torch.randn(self.layer_count, 1, self.hidden_channels).cuda(), requires_grad=True)
+        self.Recurrent_unit1 = nn.GRUCell(self.hidden_channels, self.hidden_channels)
+
+        # Output layer: is the classification layer
+        self.out = Linear(hidden_channels, 5)
+
+    def forward(self, _input):
+        x, edge_index, batch = _input.x, _input.edge_index, _input.batch
+        # First Message Passing layer: is equal as in NN with the edge info
+
+        for k_lookback in range(self.lookback):
+            if k_lookback == 0:
+                next_hidden = self.init_hidden(batch_size=x.shape[0])[0]
+                x_seq = self.projection(x)
+                next_hidden = self.Recurrent_unit1(x_seq, next_hidden)
+
+            #I am not using current graph node features-rectify
+            x_seq = self.conv1(next_hidden, edge_index)
+            x_seq = x_seq.relu() # the classical activation function
+            x_seq = F.dropout(x_seq, p=self.dropout, training=self.training)# and dropout to avoid overfitting
+
+            # Second Message Passing layer
+            x_seq = self.conv2(x_seq, edge_index)
+            x_seq = x_seq.relu()
+            x_seq = F.dropout(x_seq, p=self.dropout, training=self.training)
+
+            #RNN
+            next_hidden = self.Recurrent_unit1(x_seq, next_hidden)
+
+            # Output layer: as in NN output activation function with a probability (to be a certain class) as ouput
+        x_seq = F.softmax(self.out(next_hidden), dim=1) #is the classification layer
+
+        return x_seq
+
+    def init_hidden(self, batch_size=1):
+        return self.hidden_c.expand(self.layer_count, batch_size, self.hidden_channels).contiguous()
 ######## FUNCTIONS
 
 def train(_train_data):
@@ -112,12 +165,12 @@ def test(_test_data):
     test_acc = int(test_correct) / test_nodes
     return test_acc,cm
 
-def load_data(path, data_frame):
+def load_data(path, data_frame, total_graphs):
     ###change the data loader
     x = torch.tensor(data_frame.values[:,2:-2], dtype=torch.float)
     y = torch.tensor(data_frame['y'], dtype=torch.long)
     data_list = []
-    for j in range(no_graphs):
+    for j in range(total_graphs):
         loc = os.path.join(path,f'Adjacency_matrix_edgelist_{j}.csv')
         edges = pd.read_csv(loc, header=None, sep=';').to_numpy()
         # Edges list: in the format (head, tail); the order is irrelevant
@@ -168,10 +221,11 @@ class GNNDataset(InMemoryDataset):
         torch.save((data, slices), self.processed_paths[0])
 
 # Load data
-no_graphs = 1
+no_graphs = 2
 no_graphs_test = 1
 hidden_nodes = 0.5
 k_days = 15
+dropout_hidden = 0.3
 print(f'Train graphs:{no_graphs},Test graphs:{no_graphs_test},'
       f'hidden_nodes:{hidden_nodes}, k_days:{k_days}')
 file_loc_train = './graphs'
@@ -187,23 +241,51 @@ known_idx_train = np.where(df['state'] == 1)[0]
 scaler = sc.fit(df.values[known_idx_train,2:-2])
 df.values[known_idx_train,2:-2] = scaler.transform(df.values[known_idx_train,2:-2])
 
+# Define lookback period and split inputs/labels
+# lookback = 5
+# inputs = np.zeros((len(df)-lookback,lookback,5))
+# labels = np.zeros(len(df)-lookback)
+#
+# #use df.t
+# for i in range(lookback, len(df)):
+#     inputs[i-lookback] = df.values[i-lookback:i,2:7]
+#     labels[i-lookback] = df.values[i,7]
+# inputs = inputs.reshape(-1,lookback,df.shape[1])
+# labels = labels.reshape(-1,1)
+#
+# train_x = []
+# train_y =[]
+# test_x = {}
+# test_y = {}
+#
+# test_portion = int(0.1*len(inputs))
+# #Change to create sequence for same realization
+# if len(train_x) == 0:
+#     train_x = inputs[:-test_portion]
+#     train_y = labels[:-test_portion]
+# else:
+#     train_x = np.concatenate((train_x,inputs[:-test_portion]))
+#     train_y = np.concatenate((train_y,labels[:-test_portion]))
+# test_x[file] = (inputs[-test_portion:])
+# test_y[file] = (labels[-test_portion:])
+
 # use GPU
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # train_data_list = GNNDataset('./')
 # train_data_list = train_data_list.shuffle()
 # train_dataset = DataLoader(train_data_list, batch_size=512)
 
-train_data_list = load_data(file_loc_train, df)
+train_data_list = load_data(file_loc_train, df, no_graphs)
 num_features = train_data_list[-1].num_features
 train_indices = [id for id in range(len(train_data_list))]
-random.shuffle(train_indices)
-train_dataset = DataLoader(train_data_list, batch_size=512, sampler=train_indices)
+# random.shuffle(train_indices)
+train_dataset = DataLoader(train_data_list, batch_size=120, sampler=train_indices)
 
 num_features = 5
 # train_dataset.num_classes = 5 # S,E,I,R,D
 
 # Initialize Model
-model = GCN(hidden_channels=16)
+model = Recurrent_layer_GCN(hidden_channels=16, dropout=dropout_hidden)
 print(model)
 model = model.to(device)
 
@@ -255,7 +337,7 @@ for n_test in range(3):
     df_test, _, _ = load_graphs(no_graphs_test, hidden_nodes, file_loc_test,start_idx_graph, k_days)
     known_idx_test = np.where(df_test['state'] == 1)[0]
     df_test.values[known_idx_test,2:-2] = scaler.transform(df_test.values[known_idx_test,2:-2])
-    test_data_list = load_data(file_loc_test,df_test)
+    test_data_list = load_data(file_loc_test,df_test,no_graphs_test)
     test_indices = [id for id in range(len(test_data_list))]
     test_dataset = DataLoader(test_data_list, batch_size=256, sampler=test_indices)
     test_acc, conf_matrix = test(test_dataset)

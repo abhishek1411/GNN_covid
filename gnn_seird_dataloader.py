@@ -16,8 +16,8 @@ def load_graphs(no_of_graphs, n_hidden, file_loc,start_idx=0, k_days = 366):
 
         # table : time person_id status
         num_nodes = len(nodes)
-        num_days =len(nodes[0])
-        # num_days = 180
+        # num_days =len(nodes[0])
+        num_days = 120
         matrix = np.zeros((num_nodes*num_days,3))
         for i in range(num_days):
             for j in range(num_nodes):
