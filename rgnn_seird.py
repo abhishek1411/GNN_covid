@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Nov 21 15:55:54 2020
-
-@author: Matteo
+@author: Abhishek
 """
 
 # from sklearn.preprocessing import LabelEncoder
@@ -40,7 +38,7 @@ def time_since(since):
     return '%dm %ds' % (m, s)
 
 ######## CLASS
-
+#Method 1 from paper:STRUCTURED SEQUENCE MODELING WITH GRAPH CONVOLUTIONAL RECURRENT NETWORKS
 class Recurrent_GCN(torch.nn.Module):
     def __init__(self, hidden_channels,dropout):
         # Init parent
@@ -49,10 +47,8 @@ class Recurrent_GCN(torch.nn.Module):
         self.dropout = dropout
         self.hidden_channels = hidden_channels
 
-        self.projection = nn.Linear(num_features, hidden_channels)
-
         # GCN layers: 2 message passing layers (to create embedding)
-        self.conv1 = GCNConv(self.hidden_channels, self.hidden_channels)
+        self.conv1 = GCNConv(num_features, self.hidden_channels)
         self.conv2 = GCNConv(self.hidden_channels, self.hidden_channels)
 
         self.layer_count = 1
@@ -79,12 +75,9 @@ class Recurrent_GCN(torch.nn.Module):
             for k_lookback in range(lookback):
                 if k_lookback == 0:
                     next_hidden = self.init_hidden(batch_size=num_nodes)[0]
-                    #change this based on sequence(k_lookback) or only single graph(-1)
-                    x_seq = self.projection(inputs[:,k_lookback,:])
-                    next_hidden = self.Recurrent_unit1(x_seq, next_hidden)
 
                 #I am not using current graph node features-rectify
-                x_seq = self.conv1(next_hidden, edge_index)
+                x_seq = self.conv1(inputs[:,k_lookback,:], edge_index)
                 x_seq = x_seq.relu() # the classical activation function
                 x_seq = F.dropout(x_seq, p=self.dropout, training=self.training)# and dropout to avoid overfitting
 
@@ -207,15 +200,16 @@ class GNNDataset(InMemoryDataset):
         torch.save((data, slices), self.processed_paths[0])
 
 # Load data
-no_graphs = 2
-no_graphs_test = 1
-hidden_nodes = 0.8
+no_graphs = 25
+no_graphs_test = 10
+hidden_nodes = 0.2
 k_days = 15
 dropout_hidden = 0.3
+print(f'Evaluation: run on sequence RGNN')
 print(f'Train graphs:{no_graphs},Test graphs:{no_graphs_test},'
       f'hidden_nodes:{hidden_nodes}, k_days:{k_days}')
 file_loc_train = './graphs'
-file_loc_test = './graphs_test'
+file_loc_test = './graphs_test_1'
 # num_nodes = 1000
 # num_days =365
 start_idx_graph = 0
@@ -228,7 +222,7 @@ scaler = sc.fit(df.values[known_idx_train,2:-2])
 df.values[known_idx_train,2:-2] = scaler.transform(df.values[known_idx_train,2:-2])
 
 # Define lookback period and split inputs/labels
-lookback = 3
+lookback = 7
 inputs = np.zeros((len(df)-no_graphs*lookback,lookback,5))
 labels = np.zeros(len(df)-no_graphs*lookback)
 state_node = np.zeros(len(df)-no_graphs*lookback)
@@ -287,7 +281,7 @@ del df
 del train_data_list
 losses = []
 start = time.time()
-for epoch in range(1000):
+for epoch in range(400):
     loss = train(train_dataset)
     losses.append(loss)
     if epoch % 100 == 0:
@@ -315,7 +309,6 @@ for n_test in range(3):
     known_idx_test = np.where(df_test['state'] == 1)[0]
     df_test.values[known_idx_test,2:-2] = scaler.transform(df_test.values[known_idx_test,2:-2])
 
-    lookback = 3
     inputs = np.zeros((len(df_test)-no_graphs_test*lookback,lookback,5))
     labels = np.zeros(len(df_test)-no_graphs_test*lookback)
     state_node = np.zeros(len(df_test)-no_graphs_test*lookback)
@@ -332,10 +325,15 @@ for n_test in range(3):
     test_indices = [id for id in range(len(test_data_list))]
     test_dataset = DataLoader(test_data_list, batch_size=256, sampler=test_indices)
     test_acc, conf_matrix = test(test_dataset)
-    print(f'Test_set:{n_test}, Test Accuracy: {test_acc:.4f}, confusion_matrix:\n'
-          f'{conf_matrix}')
-    print(f'Accuracy_infected = {conf_matrix[2,2]/np.sum(conf_matrix[2,:])}\n'
-          f'Precision_infected = {conf_matrix[2,2]/np.sum(conf_matrix[:,2])}')
+    print(f'Test_set:{n_test}, Test Accuracy: {test_acc:.4f},\n'
+          f' confusion_matrix:{conf_matrix}')
+    infected_acc = conf_matrix[2,2]/np.sum(conf_matrix[2,:])
+    infected_precision = conf_matrix[2,2]/np.sum(conf_matrix[:,2])
+    F1_infected = 2* (infected_acc*infected_precision)/(infected_acc+infected_precision)
+    print(f'Accuracy_infected = {infected_acc}\n'
+          f'Precision_infected = {infected_precision}\n'
+          f'F1_score_infected = {F1_infected}')
+
     del df_test
     del test_data_list
     del test_indices

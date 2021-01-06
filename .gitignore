@@ -19,6 +19,5 @@ test_run.py
 /__pycache__
 .gitignore.txt
 rough.py
-slurm-5907726.out
-slurm-5907771.out
+*.out
 
