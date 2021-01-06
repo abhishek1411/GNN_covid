@@ -52,12 +52,12 @@ class Recurrent_GCN(torch.nn.Module):
         self.projection = nn.Linear(num_features, hidden_channels)
 
         # GCN layers: 2 message passing layers (to create embedding)
-        self.conv1 = GCNConv(num_features, hidden_channels)
-        self.conv2 = GCNConv(hidden_channels, hidden_channels)
+        self.conv1 = GCNConv(self.hidden_channels, self.hidden_channels)
+        self.conv2 = GCNConv(self.hidden_channels, self.hidden_channels)
 
         self.layer_count = 1
-        self.hidden_c = nn.Parameter(torch.randn(self.layer_count, 1, hidden_channels).cuda(), requires_grad=True)
-        self.Recurrent_unit1 = nn.GRUCell(hidden_channels, hidden_channels)
+        self.hidden_c = nn.Parameter(torch.randn(self.layer_count, 1, self.hidden_channels).cuda(), requires_grad=True)
+        self.Recurrent_unit1 = nn.GRUCell(self.hidden_channels, self.hidden_channels)
 
         # Output layer: is the classification layer
         self.out = Linear(hidden_channels, 5)
@@ -66,6 +66,7 @@ class Recurrent_GCN(torch.nn.Module):
         x, edge_file, batch = _input.x, _input.graph_idx, _input.batch
         # First Message Passing layer: is equal as in NN with the edge info
         current_loaded_file = ""
+        x_out = torch.empty(0,x.shape[2]).to(device)
         for _day in range(len(_input.state)):
             start_idx = (_day)*num_nodes
             end_idx = _day*num_nodes + num_nodes
@@ -77,11 +78,13 @@ class Recurrent_GCN(torch.nn.Module):
 
             for k_lookback in range(lookback):
                 if k_lookback == 0:
-                    next_hidden = self.init_hidden(batch_size=num_nodes)
+                    next_hidden = self.init_hidden(batch_size=num_nodes)[0]
+                    #change this based on sequence(k_lookback) or only single graph(-1)
                     x_seq = self.projection(inputs[:,k_lookback,:])
-                    x_seq = self.Recurrent_unit1(x_seq, next_hidden)
+                    next_hidden = self.Recurrent_unit1(x_seq, next_hidden)
 
-                x_seq = self.conv1(inputs[:,k_lookback,:], edge_index)
+                #I am not using current graph node features-rectify
+                x_seq = self.conv1(next_hidden, edge_index)
                 x_seq = x_seq.relu() # the classical activation function
                 x_seq = F.dropout(x_seq, p=self.dropout, training=self.training)# and dropout to avoid overfitting
 
@@ -90,13 +93,17 @@ class Recurrent_GCN(torch.nn.Module):
                 x_seq = x_seq.relu()
                 x_seq = F.dropout(x_seq, p=self.dropout, training=self.training)
 
-            # Output layer: as in NN output activation function with a probability (to be a certain class) as ouput
-            x_seq = F.softmax(self.out(x_seq), dim=1) #is the classification layer
+                #RNN
+                next_hidden = self.Recurrent_unit1(x_seq, next_hidden)
 
-        return x
+            # Output layer: as in NN output activation function with a probability (to be a certain class) as ouput
+            x_seq = F.softmax(self.out(next_hidden), dim=1) #is the classification layer
+            x_out = torch.cat((x_out,x_seq))
+
+        return x_out
 
     def init_hidden(self, batch_size=1):
-        return self.hidden_c.expand(batch_size, self.hidden_channels).contiguous()
+        return self.hidden_c.expand(self.layer_count, batch_size, self.hidden_channels).contiguous()
 ######## FUNCTIONS
 
 def train(_train_data):
@@ -202,7 +209,7 @@ class GNNDataset(InMemoryDataset):
 # Load data
 no_graphs = 2
 no_graphs_test = 1
-hidden_nodes = 0.5
+hidden_nodes = 0.8
 k_days = 15
 dropout_hidden = 0.3
 print(f'Train graphs:{no_graphs},Test graphs:{no_graphs_test},'
@@ -221,7 +228,7 @@ scaler = sc.fit(df.values[known_idx_train,2:-2])
 df.values[known_idx_train,2:-2] = scaler.transform(df.values[known_idx_train,2:-2])
 
 # Define lookback period and split inputs/labels
-lookback = 5
+lookback = 3
 inputs = np.zeros((len(df)-no_graphs*lookback,lookback,5))
 labels = np.zeros(len(df)-no_graphs*lookback)
 state_node = np.zeros(len(df)-no_graphs*lookback)
@@ -259,7 +266,7 @@ model = Recurrent_GCN(hidden_channels=16, dropout=dropout_hidden)
 print(model)
 model = model.to(device)
 
-learning_rate = 0.005 # step for gradient descendent method for learning (?)
+learning_rate = 0.0005 # step for gradient descendent method for learning (?)
 decay = 5e-4 #decay of importance of learning rate
 # optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=decay)
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, amsgrad=True)
@@ -271,7 +278,7 @@ w2 = np.where(df['y'] == 2)[0].shape[0]
 w3 = np.where(df['y'] == 3)[0].shape[0]
 w4 = np.where(df['y'] == 4)[0].shape[0]
 max_w = max(w0,w1,w2,w3,w4)
-weight = torch.tensor([max_w/w0,max_w/w1,max_w/w2,max_w/w3,max_w/w4*0.5]).to(device)
+weight = torch.tensor([max_w/w0,max_w/w1,max_w/w2,max_w/w3,(max_w/w4)*0.5]).to(device)
 criterion = torch.nn.CrossEntropyLoss(weight=weight)
 # cross entropy compare probabilities, and we have probabilities because of softmax
 
@@ -280,7 +287,7 @@ del df
 del train_data_list
 losses = []
 start = time.time()
-for epoch in range(10):
+for epoch in range(1000):
     loss = train(train_dataset)
     losses.append(loss)
     if epoch % 100 == 0:
@@ -307,7 +314,21 @@ for n_test in range(3):
     df_test, _, _ = load_graphs(no_graphs_test, hidden_nodes, file_loc_test,start_idx_graph, k_days)
     known_idx_test = np.where(df_test['state'] == 1)[0]
     df_test.values[known_idx_test,2:-2] = scaler.transform(df_test.values[known_idx_test,2:-2])
-    test_data_list = load_data(file_loc_test,df_test)
+
+    lookback = 3
+    inputs = np.zeros((len(df_test)-no_graphs_test*lookback,lookback,5))
+    labels = np.zeros(len(df_test)-no_graphs_test*lookback)
+    state_node = np.zeros(len(df_test)-no_graphs_test*lookback)
+
+    #use df.t
+    for j in range(no_graphs_test):
+        for i in range(lookback, int(num_days*num_nodes)):
+            start_idx = i-lookback + j*(num_nodes*num_days - lookback)
+            end_idx = i + j*(num_nodes*num_days - lookback)
+            inputs[start_idx] = df_test.values[start_idx:end_idx,2:7]
+            labels[start_idx] = df_test.values[i,7]
+            state_node[start_idx] = df_test.values[i,8]
+    test_data_list = load_data_rnn(file_loc_test,inputs, labels, state_node,no_graphs_test)
     test_indices = [id for id in range(len(test_data_list))]
     test_dataset = DataLoader(test_data_list, batch_size=256, sampler=test_indices)
     test_acc, conf_matrix = test(test_dataset)

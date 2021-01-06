@@ -15,12 +15,13 @@ import time
 import math
 random.seed(1)
 import os
+from torch import nn
 from torch.nn import Linear
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv,SAGEConv
 from torch_geometric import utils
 
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import confusion_matrix
 
 
@@ -109,7 +110,61 @@ class GCN1(torch.nn.Module):
         # Output layer: as in NN output activation function with a probability (to be a certain class) as ouput
         x = F.softmax(self.out(x), dim=1) #is the classification layer
         return x
+
+class Recurrent_layer_GCN(torch.nn.Module):
+    def __init__(self, hidden_channels,dropout):
+        # Init parent
+        super(Recurrent_layer_GCN, self).__init__()
+        torch.manual_seed(42)
+        self.dropout = dropout
+        self.hidden_channels = hidden_channels
+        self.lookback = 3
+
+        self.projection = nn.Linear(num_features, hidden_channels)
+
+        # GCN layers: 2 message passing layers (to create embedding)
+        self.conv1 = GCNConv(self.hidden_channels, self.hidden_channels)
+        self.conv2 = GCNConv(self.hidden_channels, self.hidden_channels)
+
+        self.layer_count = 1
+        self.hidden_c = nn.Parameter(torch.randn(self.layer_count, 1, self.hidden_channels).cuda(), requires_grad=True)
+        self.Recurrent_unit1 = nn.GRUCell(self.hidden_channels, self.hidden_channels)
+
+        # Output layer: is the classification layer
+        self.out = Linear(hidden_channels, 5)
+
+    def forward(self, _input):
+        x, edge_index, batch = _input.x, _input.edge_index, _input.batch
+        # First Message Passing layer: is equal as in NN with the edge info
+
+        for k_lookback in range(self.lookback):
+            if k_lookback == 0:
+                next_hidden = self.init_hidden(batch_size=x.shape[0])[0]
+                x_seq = self.projection(x)
+                next_hidden = self.Recurrent_unit1(x_seq, next_hidden)
+
+            #I am not using current graph node features-rectify
+            x_seq = self.conv1(next_hidden, edge_index)
+            x_seq = x_seq.relu() # the classical activation function
+            x_seq = F.dropout(x_seq, p=self.dropout, training=self.training)# and dropout to avoid overfitting
+
+            # Second Message Passing layer
+            x_seq = self.conv2(x_seq, edge_index)
+            x_seq = x_seq.relu()
+            x_seq = F.dropout(x_seq, p=self.dropout, training=self.training)
+
+            #RNN
+            next_hidden = self.Recurrent_unit1(x_seq, next_hidden)
+
+        # Output layer: as in NN output activation function with a probability (to be a certain class) as ouput
+        x_seq = F.softmax(self.out(next_hidden), dim=1) #is the classification layer
+
+        return x_seq
+
+    def init_hidden(self, batch_size=1):
+        return self.hidden_c.expand(self.layer_count, batch_size, self.hidden_channels).contiguous()
 ######## FUNCTIONS
+
 
 def train(_train_data):
     loss_all = 0
@@ -153,12 +208,12 @@ def test(_test_data):
     test_acc = int(test_correct) / test_nodes
     return test_acc,cm
 
-def load_data(path, data_frame):
+def load_data(path, data_frame, total_graphs):
     ###change the data loader
     x = torch.tensor(data_frame.values[:,2:-2], dtype=torch.float)
     y = torch.tensor(data_frame['y'], dtype=torch.long)
     data_list = []
-    for j in range(no_graphs):
+    for j in range(total_graphs):
         loc = os.path.join(path,f'Adjacency_matrix_edgelist_{j}.csv')
         edges = pd.read_csv(loc, header=None, sep=';').to_numpy()
         # Edges list: in the format (head, tail); the order is irrelevant
@@ -209,36 +264,38 @@ class GNNDataset(InMemoryDataset):
         torch.save((data, slices), self.processed_paths[0])
 
 # Load data
-node_masks = [0.2, 0.8, 0.9, 0.95]
+node_masks = [0.2,0.8,0.9,0.95]
 weight_scales = [0.7, 0.8, 1, 1.1, 1.2]
 days_feat = [5,15,30]
 dropouts = [0.1,0.2,0.3,0.4,0.5,0.6]
-hidden_nodes = 0.5
-weight_scale = 1.0
+# hidden_nodes = 0.5
+weight_scale = 1.1
 k_days = 15
 dropout_hidden = 0.3
 
-print(f'Evaluation: smaller learning rate')
+print(f'Evaluation: run on RGNN')
 for hidden_nodes in node_masks:
 # for k_days in days_feat:
-    no_graphs = 8
-    no_graphs_test = 8
+    no_graphs = 25
+    no_graphs_test = 10
 
     print(f'Train graphs:{no_graphs},Test graphs:{no_graphs_test},'
           f'hidden_nodes:{hidden_nodes}, k_days:{k_days}')
     file_loc_train = './graphs'
-    file_loc_test = './graphs_same_topo_test'
+    file_loc_test = './graphs_test_1'
     print(f'location of graphs:{file_loc_train}, weight_scale= {weight_scale}, dropout= {dropout_hidden}')
     # num_nodes = 1000
-    # num_days =365
+    # num_days =90
     start_idx_graph = 0
     df, num_nodes, num_days = load_graphs(no_graphs, hidden_nodes, file_loc_train, start_idx_graph,k_days)
     print(f'No.of_days_used:{num_days}')
     # feature scaling
-    sc = StandardScaler()
+    # sc = StandardScaler()
+    sc = MinMaxScaler()
     known_idx_train = np.where(df['state'] == 1)[0]
     scaler = sc.fit(df.values[known_idx_train,2:-2])
     df.values[known_idx_train,2:-2] = scaler.transform(df.values[known_idx_train,2:-2])
+
 
     # use GPU
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -246,7 +303,7 @@ for hidden_nodes in node_masks:
     # train_data_list = train_data_list.shuffle()
     # train_dataset = DataLoader(train_data_list, batch_size=512)
 
-    train_data_list = load_data(file_loc_train, df)
+    train_data_list = load_data(file_loc_train, df, no_graphs)
     num_features = train_data_list[-1].num_features
     train_indices = [id for id in range(len(train_data_list))]
     random.shuffle(train_indices)
@@ -260,7 +317,7 @@ for hidden_nodes in node_masks:
     print(model)
     model = model.to(device)
 
-    learning_rate = 0.002 # step for gradient descendent method for learning (?)
+    learning_rate = 0.0003 # step for gradient descendent method for learning (?)
     decay = 5e-4 #decay of importance of learning rate
     # optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=decay)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, amsgrad=True)
@@ -272,7 +329,7 @@ for hidden_nodes in node_masks:
     w3 = np.where(df['y'] == 3)[0].shape[0]
     w4 = np.where(df['y'] == 4)[0].shape[0]
     max_w = max(w0,w1,w2,w3,w4)
-    weight = torch.tensor([max_w/w0,max_w/w1*0.9*weight_scale,max_w/w2*weight_scale,max_w/w3,max_w/w4]).to(device)
+    weight = torch.tensor([max_w/w0,(max_w/w1)*0.7*weight_scale,(max_w/w2)*weight_scale,max_w/w3,(max_w/w4)*0.7]).to(device)
     criterion = torch.nn.CrossEntropyLoss(weight=weight)
     # cross entropy compare probabilities, and we have probabilities because of softmax
 
@@ -281,10 +338,10 @@ for hidden_nodes in node_masks:
     del train_data_list
     losses = []
     start = time.time()
-    for epoch in range(500):
+    for epoch in range(600):
         loss = train(train_dataset)
         losses.append(loss)
-        if epoch % 500 == 0:
+        if epoch % 100 == 0:
             test_acc, conf_matrix = test(train_dataset)
             infected_acc = conf_matrix[2,2]/np.sum(conf_matrix[2,:])
             infected_precision = conf_matrix[2,2]/np.sum(conf_matrix[:,2])
@@ -310,7 +367,7 @@ for hidden_nodes in node_masks:
         df_test, _, _ = load_graphs(no_graphs_test, hidden_nodes, file_loc_test,start_idx_graph, k_days)
         known_idx_test = np.where(df_test['state'] == 1)[0]
         df_test.values[known_idx_test,2:-2] = scaler.transform(df_test.values[known_idx_test,2:-2])
-        test_data_list = load_data(file_loc_test,df_test)
+        test_data_list = load_data(file_loc_test,df_test, no_graphs_test)
         test_indices = [id for id in range(len(test_data_list))]
         test_dataset = DataLoader(test_data_list, batch_size=256, sampler=test_indices)
         test_acc, conf_matrix = test(test_dataset)
